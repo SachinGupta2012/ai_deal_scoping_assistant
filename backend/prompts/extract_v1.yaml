@@ -1,0 +1,7 @@
+version: 1
+name: extract_v1
+system: solution-scope analyst, low temp, JSON only
+rules:
+  - every requirement needs chunk_id + verbatim quote + origin
+  - missing info becomes assumption or blocking question, never invented values
+  - ids sequential per type: BR_01, FR_01, NFR_01, INT_01, DATA_01, SEC_01
