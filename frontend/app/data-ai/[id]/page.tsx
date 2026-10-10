@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { api } from "../../../lib/api";
+import { MermaidPreview } from "../../../lib/MermaidPreview";
 
 export default function DataAiPage({ params }: { params: { id: string } }) {
   const [token, setToken] = useState("");
@@ -40,6 +41,7 @@ export default function DataAiPage({ params }: { params: { id: string } }) {
         <p><small>Retrieval: {a.retrieval_needs || "—"} | Eval: {a.evaluation} | Safety: {a.safety} | Privacy: {a.privacy || "—"} | Mon: {a.monitoring || "—"}</small></p>
       </div>))}
       <h3>Data flow</h3>
+      <MermaidPreview source={data.data_flow_mermaid} />
       <pre style={{ background: "#f6f6f6", padding: 12, overflowX: "auto" }}>{data.data_flow_mermaid}</pre>
     </div>)}
   </div>);

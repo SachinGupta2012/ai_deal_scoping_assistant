@@ -5,6 +5,7 @@ from google import genai
 from app.core.config import settings
 from app.schemas.architecture import ArchitectureModel
 from app.services.cloud_catalog import catalog_for
+from app.services.mock_provider import mock_architecture
 
 SYSTEM = """You are a cloud solution architect. Input: approved scope + platform + allowed service catalog.
 Return ONLY valid JSON:
@@ -43,6 +44,8 @@ def _openai_compatible(scope: dict, platform: str, model: str, base: str, key: s
 
 
 def generate_architecture(session_id: str, scope: dict, platform: str, scope_version_no: int) -> ArchitectureModel:
+    if settings.USE_MOCK_AI or settings.AI_PROVIDER == "mock":
+        return mock_architecture(session_id, scope, platform, scope_version_no)
     if settings.AI_PROVIDER == "openai_compatible":
         data = _openai_compatible(scope, platform, settings.AI_MODEL, settings.AI_BASE_URL, settings.AI_API_KEY)
         provider, model = "openai_compatible", settings.AI_MODEL

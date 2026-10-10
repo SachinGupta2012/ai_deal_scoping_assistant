@@ -4,6 +4,7 @@ import httpx
 from google import genai
 from app.core.config import settings
 from app.schemas.prd import PRDModel
+from app.services.mock_provider import mock_prd
 
 SYSTEM = """You are a product-requirements author. Input is an approved scope model (JSON).
 Return ONLY valid JSON matching:
@@ -41,6 +42,8 @@ def _openai_compatible(scope_json: str, model: str) -> dict:
 
 
 def generate_prd(session_id: str, scope_payload: dict, scope_version_no: int) -> PRDModel:
+    if settings.USE_MOCK_AI or settings.AI_PROVIDER == "mock":
+        return mock_prd(session_id, scope_payload, scope_version_no)
     scope_json = json.dumps(scope_payload)
     if settings.AI_PROVIDER == "openai_compatible":
         model = settings.AI_MODEL

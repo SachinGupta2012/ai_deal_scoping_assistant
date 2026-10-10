@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { api } from "../../../lib/api";
+import { MermaidPreview } from "../../../lib/MermaidPreview";
 
 export default function ArchPage({ params }: { params: { id: string } }) {
   const [token, setToken] = useState("");
@@ -25,6 +26,7 @@ export default function ArchPage({ params }: { params: { id: string } }) {
       <p><b>Platform: {arch.platform}</b> — {arch.platform_rationale}</p>
       {arch.validation?.off_catalog?.length ? <p style={{ color: "red" }}>Off-catalog: {arch.validation.off_catalog.join(", ")}</p> : null}
       {arch.validation?.missing_layers?.length ? <p style={{ color: "red" }}>Missing layers: {arch.validation.missing_layers.join(", ")}</p> : null}
+      <MermaidPreview source={arch.mermaid} />
       <pre style={{ background: "#f6f6f6", padding: 12, overflowX: "auto" }}>{arch.mermaid}</pre>
       {arch.components?.map((c: any) => (
         <div key={c.component_id} style={{ border: "1px solid #ddd", padding: 12, margin: "8px 0" }}>

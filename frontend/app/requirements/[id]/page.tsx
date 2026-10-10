@@ -15,7 +15,7 @@ export default function ReqPage({ params }: { params: { id: string } }) {
   return (<div>
     <h2>Requirements Workspace — {params.id}</h2>
     <input placeholder="paste JWT" value={token} onChange={e => setToken(e.target.value)} style={{ width: "100%" }} />
-    <button onClick={async () => { await api(`/sessions/${params.id}/analyze`, { method: "POST" }, token); }}>Analyze with Gemini</button>
+    <button onClick={async () => { await api(`/sessions/${params.id}/analyze`, { method: "POST" }, token); }}>Analyze Requirements</button>
     {!scope && <p>Waiting for scope…</p>}
     {scope?.scope?.requirements?.map((r: any) => (
       <div key={r.req_id} style={{ border: "1px solid #ddd", padding: 12, margin: "8px 0" }}>

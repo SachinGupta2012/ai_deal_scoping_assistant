@@ -4,6 +4,7 @@ import httpx
 from google import genai
 from app.core.config import settings
 from app.schemas.data_ai import DataAIStrategyModel
+from app.services.mock_provider import mock_data_ai
 
 SYSTEM = """You are a data + integration + AI strategist. Input: approved scope JSON.
 Return ONLY valid JSON:
@@ -38,6 +39,8 @@ def _openai_compatible(scope_json: str, model: str, base: str, key: str) -> dict
 
 
 def generate_data_ai(session_id: str, scope: dict, scope_version_no: int) -> DataAIStrategyModel:
+    if settings.USE_MOCK_AI or settings.AI_PROVIDER == "mock":
+        return mock_data_ai(session_id, scope, scope_version_no)
     scope_json = json.dumps(scope)
     if settings.AI_PROVIDER == "openai_compatible":
         data = _openai_compatible(scope_json, settings.AI_MODEL, settings.AI_BASE_URL, settings.AI_API_KEY)

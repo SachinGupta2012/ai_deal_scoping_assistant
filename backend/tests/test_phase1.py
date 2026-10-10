@@ -1,4 +1,4 @@
-"""Phase 1 tests — live-AI only. Schema, traceability shape, RBAC, provider chain."""
+"""Phase 1 tests — schema, traceability shape, RBAC, provider chain."""
 from app.schemas.scope import Requirement, ScopeModel
 from app.services.ai.orchestrator import _chain
 
@@ -31,10 +31,9 @@ def test_schema_rejects_missing_origin():
         assert True
 
 
-def test_provider_chain_has_live_fallback():
+def test_provider_chain_defaults_to_mock_mode():
     chain = _chain()
-    assert "google" in chain and "openai_compatible" in chain
-    assert "mock" not in chain
+    assert chain == ["mock"]
 
 
 def test_rbac_matrix():

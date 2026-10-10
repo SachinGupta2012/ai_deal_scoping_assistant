@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = 5
     DB_POOL_TIMEOUT: int = 30
 
-    AI_PROVIDER: str = "google"  # google | openai_compatible (groq, openrouter, ollama via base_url)
+    USE_MOCK_AI: bool = True
+    AI_PROVIDER: str = "mock"  # mock | google | openai_compatible (groq, openrouter, ollama via base_url)
     AI_API_KEY: str = ""
     AI_MODEL: str = "gemini-3.8-flash"
     AI_BASE_URL: str = "https://api.groq.com/openai/v1"

@@ -279,14 +279,28 @@ ai_deal_scoping_assistant/
 cd backend; python -m venv .venv; pip install -r requirements.txt; uvicorn app.main:app --reload
 # Frontend
 cd frontend; npm install; npm run dev
-# Mock mode: USE_MOCK_AI=true (default), no API keys needed
-# Optional live AI: set OPENAI_API_KEY / ANTHROPIC_API_KEY in backend/.env
+# Mock mode: USE_MOCK_AI=true (default), AI_PROVIDER=mock, no API keys needed
+# Optional live AI: set USE_MOCK_AI=false plus AI_PROVIDER and AI_API_KEY / GEMINI_API_KEY / GROQ_API_KEY in backend/.env
 ```
+
+### Current Backend Routes
+- `POST /sessions` create session
+- `POST /sessions/{sid}/ingest` paste/upload requirements
+- `POST /sessions/{sid}/analyze` extract scope model
+- `POST /sessions/{sid}/approve` approve reviewed scope
+- `POST /sessions/{sid}/prd` generate PRD + scope
+- `POST /sessions/{sid}/architecture` generate cloud architecture
+- `POST /sessions/{sid}/data-ai` generate data/integration/AI strategy
+- `POST /sessions/{sid}/estimate` calculate effort, timeline, and ROM
+- `POST /sessions/{sid}/change-impact` inspect affected/unaffected outputs
+- `POST /sessions/{sid}/quality-gate` run pre-export checks
+- `POST /sessions/{sid}/package` export Markdown package with disclaimer
 
 ## 10. Known Limitations / Notes
 - Outputs are planning aids, not quotes/commitments — enforce disclaimer + human review.
-- Customer data stored locally only (no external calls in mock mode); document storage/retention when implemented.
+- Customer data stored locally only in mock mode; live AI mode requires explicit provider configuration and customer approval.
 - Estimation transparency > precision — always show drivers, rates, assumptions, confidence.
+- Current export supports Markdown. PDF/DOCX export remains a bonus item.
 
 ---
 *Last synced from client challenge brief on 2026-09-27. Keep this file as the build reference.*
