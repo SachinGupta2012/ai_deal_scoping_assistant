@@ -2,6 +2,7 @@
 import os
 from typing import Iterable
 
+from app.core.config import settings
 from app.schemas.package import ChangeImpactModel, PackageModel, QualityGateModel
 
 DISCLAIMER = (
@@ -42,7 +43,8 @@ def assemble_markdown(session_id: str, scope: dict, gate: QualityGateModel, impa
     return "\n\n".join(sections) + "\n"
 
 
-def save_package(session_id: str, markdown: str, storage_dir: str = "storage") -> str:
+def save_package(session_id: str, markdown: str, storage_dir: str | None = None) -> str:
+    storage_dir = storage_dir or settings.STORAGE_DIR
     os.makedirs(storage_dir, exist_ok=True)
     path = os.path.join(storage_dir, f"{session_id}_scoping_package.md")
     with open(path, "w", encoding="utf-8") as f:

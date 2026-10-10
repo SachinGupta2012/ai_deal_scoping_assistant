@@ -1,4 +1,5 @@
 """Mock mode tests — seeded flow works without paid AI."""
+from app.core.config import settings
 from app.services.arch_generator import generate_architecture
 from app.services.ai.orchestrator import _chain, run_analysis
 from app.services.coverage import compute_coverage
@@ -9,11 +10,15 @@ from app.services.prd_generator import generate_prd
 from app.services.quality_gate import run_quality_gate
 
 
-def test_mock_chain_is_default():
+def test_mock_chain_is_default(monkeypatch):
+    monkeypatch.setattr(settings, "USE_MOCK_AI", True)
+    monkeypatch.setattr(settings, "AI_PROVIDER", "mock")
     assert _chain() == ["mock"]
 
 
-def test_mock_flow_generates_traceable_outputs():
+def test_mock_flow_generates_traceable_outputs(monkeypatch):
+    monkeypatch.setattr(settings, "USE_MOCK_AI", True)
+    monkeypatch.setattr(settings, "AI_PROVIDER", "mock")
     text = "Modernize onboarding portal with Salesforce CRM integration, SOC2 logging, and AI-assisted review."
     scope, meta = run_analysis("s1", text, [{"idx": "0", "text": text}])
     payload = scope.model_dump()
@@ -29,6 +34,8 @@ def test_mock_flow_generates_traceable_outputs():
 def test_full_mock_pipeline_reaches_package_export(tmp_path, monkeypatch):
     import app.services.package_assembler as assembler
 
+    monkeypatch.setattr(settings, "USE_MOCK_AI", True)
+    monkeypatch.setattr(settings, "AI_PROVIDER", "mock")
     monkeypatch.setattr(assembler, "save_package", lambda session_id, markdown: str(tmp_path / "package.md"))
     text = "Modernize onboarding portal with Salesforce CRM integration, SOC2 logging, and AI-assisted review."
     scope, _ = run_analysis("s1", text, [{"idx": "0", "text": text}])

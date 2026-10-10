@@ -280,7 +280,10 @@ cd backend; python -m venv .venv; pip install -r requirements.txt; uvicorn app.m
 # Frontend
 cd frontend; npm install; npm run dev
 # Mock mode: USE_MOCK_AI=true (default), AI_PROVIDER=mock, no API keys needed
-# Optional live AI: set USE_MOCK_AI=false plus AI_PROVIDER and AI_API_KEY / GEMINI_API_KEY / GROQ_API_KEY in backend/.env
+# Free live chain: USE_MOCK_AI=false, AI_PROVIDER=live_chain
+# Provider order: AI_PROVIDER_CHAIN=cloudflare,openrouter,groq,google
+# Keys: CLOUDFLARE_API_TOKEN, OPENROUTER_API_KEY, GROQ_API_KEY, GEMINI_API_KEY
+# Cache: AI_CACHE_ENABLED=true, AI_CACHE_DIR=./storage/ai_cache
 ```
 
 ### Current Backend Routes

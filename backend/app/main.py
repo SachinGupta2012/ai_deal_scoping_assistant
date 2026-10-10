@@ -21,9 +21,19 @@ app.include_router(final_package.router)
 
 @app.get("/health")
 def health():
-    return {"ok": True, "env": settings.ENV, "ai_provider": settings.AI_PROVIDER, "ai_model": settings.AI_MODEL, "mock_mode": settings.USE_MOCK_AI or settings.AI_PROVIDER == "mock"}
+    return {
+        "ok": True,
+        "env": settings.ENV,
+        "ai_provider": settings.AI_PROVIDER,
+        "ai_provider_chain": settings.AI_PROVIDER_CHAIN,
+        "ai_model": settings.AI_MODEL,
+        "mock_mode": settings.USE_MOCK_AI or settings.AI_PROVIDER == "mock",
+        "ai_cache_enabled": settings.AI_CACHE_ENABLED,
+    }
 
 
 @app.on_event("startup")
 def startup():
+    if settings.ENV != "development" and settings.JWT_SECRET_KEY in ("", "change-me", "CHANGE-ME-min-32-chars"):
+        raise RuntimeError("JWT_SECRET_KEY must be configured for non-development environments")
     Base.metadata.create_all(bind=engine)

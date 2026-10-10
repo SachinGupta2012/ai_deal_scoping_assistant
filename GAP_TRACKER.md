@@ -6,6 +6,7 @@
 
 ## Phase 1 — Scope + Foundation
 - [CLOSED 2026-10-10] Mock mode now defaults to deterministic seeded generation with no paid AI required.
+- [CLOSED 2026-10-10] Live AI chain added for Cloudflare Workers AI, OpenRouter, Groq, and Gemini with cache-backed fallback.
 - [OPEN] No browser click-through run yet — backend tests and frontend TypeScript validation pass, but no manual/dev-server UI pass has been completed.
 - [CLOSED 2026-10-10] `recommend_platform` delivered in Phase 3.
 
@@ -17,7 +18,7 @@
 ## Phase 3 — Cloud Architecture (FR-3)
 - [CLOSED 2026-10-10] Mermaid preview added as a dependency-free visual graph with raw Mermaid still shown.
 - [OPEN] No live-provider end-to-end run (approve → generate arch with real AI) — requires approved AI credentials; mock path is implemented.
-- [OPEN] `recommend_platform` is a simple keyword rule; AI rationale layered on top — acceptable, revisit only if recommendation quality is poor in UAT.
+- [CLOSED 2026-10-10] `recommend_platform` upgraded to deterministic weighted scoring using cloud/ecosystem keywords from requirement text.
 
 ## Phase 4 — Data / Integration / AI Strategy (FR-4)
 - [CLOSED 2026-10-08] DataDomain explicit fields added: ingestion, storage_transactional, storage_analytical, metadata, reporting, backup_recovery (optional, backward-compatible) + prompt rules + frontend + tests.

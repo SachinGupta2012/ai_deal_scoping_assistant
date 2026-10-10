@@ -35,6 +35,11 @@ def test_recommender_defaults_aws():
     assert recommend_platform(["FR", "NFR"]) == "aws"
 
 
+def test_recommender_uses_requirement_text():
+    assert recommend_platform([{"description": "Use Microsoft Entra ID and Dynamics CRM"}]) == "azure"
+    assert recommend_platform([{"description": "Analytics warehouse on BigQuery with Vertex AI"}]) == "gcp"
+
+
 def test_arch_model_minimal_valid():
     comps = [_comp(cid=f"COMP_{i:02d}", layer=layer) for i, layer in enumerate(
         ["frontend", "backend", "api", "database", "iam", "observability", "security", "deployment"], start=1)]

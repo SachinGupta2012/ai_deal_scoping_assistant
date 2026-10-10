@@ -55,8 +55,7 @@ def request_arch(sid: str, body: ArchRequest, bg: BackgroundTasks, db: Session =
         return {"error": "scope must be approved before architecture", "code": 409}
     platform = body.platform
     if platform == "auto":
-        types = [r.get("type", "") for r in (sv.payload.get("requirements", []))]
-        platform = recommend_platform(types)
+        platform = recommend_platform(sv.payload.get("requirements", []))
     bg.add_task(_job, sid, platform, user.id, user.role, user.org_id)
     return {"ok": True, "status": "queued", "platform": platform}
 

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from app.core.config import settings
 from app.core.db import get_db
 from app.core.security import create_token
 from app.models.tables import Organization, User
@@ -18,6 +19,8 @@ class LoginIn(BaseModel):
 
 @router.post("/seed-owner")
 def seed_owner(db: Session = Depends(get_db)):
+    if settings.ENV != "development" or not settings.ALLOW_DEV_SEED_OWNER:
+        raise HTTPException(status_code=403, detail="Seed owner is development-only")
     org = db.query(Organization).first() or Organization(name="default")
     if not db.query(Organization).first():
         db.add(org)

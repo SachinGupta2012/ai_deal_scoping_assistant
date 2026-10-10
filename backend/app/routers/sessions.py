@@ -4,6 +4,7 @@ import os
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from app.core.config import settings
 from app.core.db import get_db
 from app.core.security import get_current_user, require_role
 from app.models.tables import AuditLog, Chunk, Document, RequirementRow, ScopeVersion, Session as S
@@ -40,8 +41,8 @@ def ingest(sid: str, text: str = Form(default=""), file: UploadFile | None = Fil
         raw = read_upload(file.filename, file.file.read())
         fname = file.filename
     norm = normalize_text(raw)
-    os.makedirs("storage", exist_ok=True)
-    path = f"storage/{sid}.md"
+    os.makedirs(settings.STORAGE_DIR, exist_ok=True)
+    path = os.path.join(settings.STORAGE_DIR, f"{sid}.md")
     with open(path, "w", encoding="utf-8") as f:
         f.write(norm)
     doc = Document(session_id=sid, filename=fname, raw_path=path, normalized_md=norm)

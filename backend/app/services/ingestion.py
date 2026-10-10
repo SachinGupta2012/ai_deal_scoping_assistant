@@ -3,6 +3,7 @@ import os
 import uuid
 from pypdf import PdfReader
 from docx import Document as DocxDocument
+from app.core.config import settings
 
 CHUNK_SIZE = 1500
 CHUNK_OVERLAP = 150
@@ -25,7 +26,8 @@ def chunk_text(text: str):
 def read_upload(filename: str, data: bytes) -> str:
     lower = filename.lower()
     if lower.endswith(".pdf"):
-        tmp = f"/tmp/{uuid.uuid4()}.pdf"
+        os.makedirs(settings.STORAGE_DIR, exist_ok=True)
+        tmp = os.path.join(settings.STORAGE_DIR, f"{uuid.uuid4()}.pdf")
         with open(tmp, "wb") as f:
             f.write(data)
         reader = PdfReader(tmp)
@@ -33,7 +35,8 @@ def read_upload(filename: str, data: bytes) -> str:
         os.remove(tmp)
         return text
     if lower.endswith(".docx"):
-        tmp = f"/tmp/{uuid.uuid4()}.docx"
+        os.makedirs(settings.STORAGE_DIR, exist_ok=True)
+        tmp = os.path.join(settings.STORAGE_DIR, f"{uuid.uuid4()}.docx")
         with open(tmp, "wb") as f:
             f.write(data)
         doc = DocxDocument(tmp)

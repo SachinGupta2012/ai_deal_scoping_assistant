@@ -100,11 +100,31 @@ def validate_platform_services(platform: str, components: list) -> List[str]:
     return bad
 
 
-def recommend_platform(requirement_types: List[str]) -> str:
-    """Deterministic recommender — transparent rule, AI explains on top."""
-    text = " ".join(requirement_types).lower()
-    if "entra" in text or "microsoft" in text or ".net" in text:
-        return "azure"
-    if "bigquery" in text or "vertex" in text or "gcp" in text:
-        return "gcp"
-    return "aws"
+def recommend_platform(requirements: List) -> str:
+    """Deterministic weighted recommender using requirement text and known ecosystem cues."""
+    parts: list[str] = []
+    for item in requirements:
+        if isinstance(item, dict):
+            parts.extend(str(item.get(k, "")) for k in ("type", "description", "quote"))
+        else:
+            parts.append(str(item))
+    text = " ".join(parts).lower()
+    scores = {
+        "aws": 1,
+        "azure": 0,
+        "gcp": 0,
+    }
+    weights = {
+        "azure": ["azure", "microsoft", "entra", "active directory", ".net", "dynamics", "power bi", "sharepoint", "teams", "sql server"],
+        "gcp": ["gcp", "google cloud", "bigquery", "vertex", "gemini", "firebase", "looker", "pub/sub", "dataflow", "analytics"],
+        "aws": ["aws", "amazon", "bedrock", "sagemaker", "lambda", "rds", "dynamodb", "s3", "eventbridge", "cloudwatch"],
+    }
+    for platform, keywords in weights.items():
+        scores[platform] += sum(2 for keyword in keywords if keyword in text)
+    if "data warehouse" in text or "analytics" in text:
+        scores["gcp"] += 1
+    if "enterprise identity" in text or "office 365" in text:
+        scores["azure"] += 1
+    if "serverless" in text or "startup" in text:
+        scores["aws"] += 1
+    return max(scores, key=scores.get)
