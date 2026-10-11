@@ -30,6 +30,23 @@ def create_session(body: CreateIn, db: Session = Depends(get_db), user=Depends(r
     return {"id": s.id, "title": s.title, "status": s.status}
 
 
+@router.get("")
+def list_sessions(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    rows = db.query(S).filter(S.org_id == user.org_id).order_by(S.created_at.desc()).limit(50).all()
+    return {
+        "sessions": [
+            {
+                "id": row.id,
+                "title": row.title,
+                "status": row.status,
+                "opportunity_context": row.opportunity_context or {},
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ]
+    }
+
+
 @router.post("/{sid}/ingest")
 def ingest(sid: str, text: str = Form(default=""), file: UploadFile | None = File(default=None), db: Session = Depends(get_db), user=Depends(require_role("sales", "architect", "ba"))):
     s = db.query(S).filter(S.id == sid).first()

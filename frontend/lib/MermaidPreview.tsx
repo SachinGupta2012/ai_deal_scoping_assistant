@@ -21,12 +21,12 @@ function parseEdges(source: string): Edge[] {
 export function MermaidPreview({ source }: { source: string }) {
   const edges = parseEdges(source || "");
   if (!edges.length) return null;
-  return (<div style={{ display: "grid", gap: 8, margin: "12px 0" }}>
+  return (<div className="grid" style={{ margin: "12px 0" }}>
     {edges.map((edge, idx) => (
-      <div key={`${edge.from}-${edge.to}-${idx}`} style={{ display: "grid", gridTemplateColumns: "1fr 48px 1fr", alignItems: "center", gap: 8 }}>
-        <div style={{ border: "1px solid #ccc", padding: 10, borderRadius: 6, background: "#fff" }}><b>{edge.from}</b><br /><small>{edge.fromLabel}</small></div>
-        <div style={{ textAlign: "center", color: "#555" }}>to</div>
-        <div style={{ border: "1px solid #ccc", padding: 10, borderRadius: 6, background: "#fff" }}><b>{edge.to}</b><br /><small>{edge.toLabel}</small></div>
+      <div key={`${edge.from}-${edge.to}-${idx}`} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 48px minmax(0, 1fr)", alignItems: "center", gap: 8 }}>
+        <div className="card pad" style={{ boxShadow: "none" }}><b>{edge.from}</b><br /><small>{edge.fromLabel}</small></div>
+        <div style={{ textAlign: "center", color: "#52648a", fontWeight: 800 }}>to</div>
+        <div className="card pad" style={{ boxShadow: "none" }}><b>{edge.to}</b><br /><small>{edge.toLabel}</small></div>
       </div>
     ))}
   </div>);

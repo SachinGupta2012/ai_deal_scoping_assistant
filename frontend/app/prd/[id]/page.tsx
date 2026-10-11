@@ -1,36 +1,137 @@
 "use client";
+
 import { useState } from "react";
+import { AppShell } from "../../../components/AppShell";
+import { Icon } from "../../../components/Icon";
+import { Button } from "../../../components/Primitives";
+import { EmptyState, WorkspaceFrame } from "../../../components/Workspace";
 import { api } from "../../../lib/api";
+import { useAuthToken } from "../../../lib/auth";
+import { can } from "../../../lib/rbac";
+
+type Capability = {
+  capability_id: string;
+  name: string;
+  description: string;
+  priority: string;
+  scope_kind: string;
+  included_req_ids: string[];
+};
 
 export default function PrdPage({ params }: { params: { id: string } }) {
-  const [token, setToken] = useState("");
+  const { token, user } = useAuthToken();
   const [prd, setPrd] = useState<any>(null);
   const [scope, setScope] = useState<any>(null);
-  const [err, setErr] = useState("");
-  return (<div>
-    <h2>PRD + Scope Workspace — {params.id}</h2>
-    <input placeholder="paste JWT" value={token} onChange={e => setToken(e.target.value)} style={{ width: "100%" }} />
-    <div style={{ display: "flex", gap: 8, margin: "12px 0" }}>
-      <button onClick={async () => { setErr(""); try { await api(`/sessions/${params.id}/prd`, { method: "POST" }, token); setErr("queued — polling…"); } catch (e: any) { setErr(e.message); } }}>Generate PRD (needs approved scope)</button>
-      <button onClick={async () => { setErr(""); try { const [r, s] = await Promise.all([api(`/sessions/${params.id}/prd`, {}, token), api(`/sessions/${params.id}/scope`, {}, token)]); setPrd(r.prd || null); setScope(s.scope || null); if (!r.prd) setErr("pending — approve scope + generate first"); } catch (e: any) { setErr(e.message); } }}>Refresh</button>
-    </div>
-    {err && <p>{err}</p>}
-    {prd?.coverage && <p><b>Coverage {prd.coverage.coverage_pct}%</b> — uncovered: {prd.coverage.uncovered_req_ids.join(", ") || "none"} {prd.coverage.unsupported_capabilities.length ? `— unsupported: ${prd.coverage.unsupported_capabilities.join(", ")}` : ""}</p>}
-    {prd?.capabilities && scope?.requirements && (<div>
-      <h3>Coverage matrix</h3>
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
-        <thead><tr><th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Requirement</th>{prd.capabilities.map((c: any) => <th key={c.capability_id} style={{ borderBottom: "1px solid #ddd" }}>{c.capability_id}</th>)}</tr></thead>
-        <tbody>{scope.requirements.map((r: any) => <tr key={r.req_id}>
-          <td style={{ borderBottom: "1px solid #eee", padding: 6 }}>{r.req_id}</td>
-          {prd.capabilities.map((c: any) => <td key={c.capability_id} style={{ textAlign: "center", borderBottom: "1px solid #eee", padding: 6 }}>{c.included_req_ids.includes(r.req_id) ? "yes" : ""}</td>)}
-        </tr>)}</tbody>
-      </table>
-    </div>)}
-    {prd?.capabilities?.map((c: any) => (
-      <div key={c.capability_id} style={{ border: "1px solid #ddd", padding: 12, margin: "8px 0" }}>
-        <b>{c.capability_id} — {c.name}</b> [{c.scope_kind}] <i>{c.priority}</i>
-        <p>{c.description}</p>
-        <small>reqs: {c.included_req_ids.join(", ")}</small>
-      </div>))}
-  </div>);
+  const [status, setStatus] = useState("");
+  const canGenerate = can(user?.role, "generatePrd");
+
+  async function refresh() {
+    setStatus("");
+    try {
+      const [prdResult, scopeResult] = await Promise.all([api(`/sessions/${params.id}/prd`, {}, token), api(`/sessions/${params.id}/scope`, {}, token)]);
+      setPrd(prdResult.prd || null);
+      setScope(scopeResult.scope || null);
+      if (!prdResult.prd) setStatus("Pending. Approve scope, then generate PRD.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to refresh PRD.");
+    }
+  }
+
+  async function generate() {
+    setStatus("");
+    try {
+      await api(`/sessions/${params.id}/prd`, { method: "POST" }, token);
+      setStatus("PRD generation queued. Refresh in a few seconds.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to generate PRD.");
+    }
+  }
+
+  return (
+    <AppShell sessionId={params.id}>
+      <WorkspaceFrame
+        sessionId={params.id}
+        title="PRD & Functional Scope"
+        subtitle="Generate customer-ready scope, capabilities, journeys and traceability."
+        active="prd"
+        actions={
+          <div className="filter-row">
+            <Button onClick={generate} disabled={!canGenerate}>
+              <Icon name="spark" />
+              Generate PRD
+            </Button>
+            <Button variant="ghost" onClick={refresh}>
+              Refresh
+            </Button>
+          </div>
+        }
+      >
+        <div className="grid">
+          <section className="card pad">
+            <div className="filter-row">
+              <span className="badge blue">Signed in: {user?.email}</span>
+              {prd?.coverage && <span className="badge green">Coverage {prd.coverage.coverage_pct}%</span>}
+            </div>
+          </section>
+
+          {status && <div className="alert-box">{status}</div>}
+          {!prd ? (
+            <EmptyState title="No PRD generated yet" text="Generate PRD after approving the requirements scope." />
+          ) : (
+            <>
+              <section className="card pad">
+                <div className="card-header">
+                  <h2 className="card-title">Coverage Matrix</h2>
+                  <span className="subtle">Uncovered: {prd.coverage?.uncovered_req_ids?.join(", ") || "none"}</span>
+                </div>
+                <div className="table-wrap">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Requirement</th>
+                        {(prd.capabilities || []).map((capability: Capability) => (
+                          <th key={capability.capability_id}>{capability.capability_id}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(scope?.requirements || []).map((req: { req_id: string }) => (
+                        <tr key={req.req_id}>
+                          <td>{req.req_id}</td>
+                          {(prd.capabilities || []).map((capability: Capability) => (
+                            <td key={capability.capability_id}>{capability.included_req_ids.includes(req.req_id) ? "yes" : ""}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section className="card pad">
+                <div className="card-header">
+                  <h2 className="card-title">Capabilities</h2>
+                  <span className="subtle">{prd.capabilities?.length || 0} generated</span>
+                </div>
+                <div className="stack">
+                  {(prd.capabilities || []).map((capability: Capability) => (
+                    <div className="scenario-card" key={capability.capability_id}>
+                      <span className="icon-wrap">
+                        <Icon name="prd" />
+                      </span>
+                      <div>
+                        <strong>{capability.capability_id} - {capability.name}</strong>
+                        <div className="subtle">{capability.scope_kind} | {capability.priority} | Reqs: {capability.included_req_ids.join(", ")}</div>
+                        <p>{capability.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+        </div>
+      </WorkspaceFrame>
+    </AppShell>
+  );
 }

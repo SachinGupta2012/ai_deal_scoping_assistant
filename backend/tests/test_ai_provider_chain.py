@@ -55,3 +55,36 @@ def test_generate_json_falls_back_to_next_provider(monkeypatch):
     assert data == {"ok": True}
     assert meta["provider"] == "openrouter"
     assert meta["attempts"][0]["provider"] == "cloudflare"
+
+
+def test_cloudflare_workers_models_use_run_endpoint(monkeypatch):
+    monkeypatch.setattr(settings, "USE_MOCK_AI", False)
+    monkeypatch.setattr(settings, "AI_PROVIDER", "cloudflare")
+    monkeypatch.setattr(settings, "AI_PROVIDER_CHAIN", "cloudflare")
+    monkeypatch.setattr(settings, "CLOUDFLARE_ACCOUNT_ID", "acct")
+    monkeypatch.setattr(settings, "CLOUDFLARE_API_TOKEN", "cf-key")
+    monkeypatch.setattr(settings, "CLOUDFLARE_MODEL", "@cf/meta/llama-3.1-8b-instruct")
+    monkeypatch.setattr(settings, "AI_CACHE_ENABLED", False)
+    captured = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"success": True, "result": {"response": {"ok": True}}}
+
+    def fake_post(url, headers, json, timeout):
+        captured["url"] = url
+        captured["body"] = json
+        return FakeResponse()
+
+    monkeypatch.setattr("app.services.ai.live_json.httpx.post", fake_post)
+    data, meta = generate_json("extract_v1", input_hash("cf"), "system", "user")
+
+    assert data == {"ok": True}
+    assert meta["provider"] == "cloudflare"
+    assert captured["url"].endswith("/ai/run/@cf/meta/llama-3.1-8b-instruct")
+    assert captured["body"]["messages"][0]["role"] == "system"
+    assert captured["body"]["messages"][1]["role"] == "user"
+    assert captured["body"]["response_format"] == {"type": "json_object"}

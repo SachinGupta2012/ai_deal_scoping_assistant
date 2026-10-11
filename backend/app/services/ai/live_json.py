@@ -33,6 +33,14 @@ def _config(name: str) -> ProviderConfig | None:
     if name == "cloudflare":
         if not settings.CLOUDFLARE_ACCOUNT_ID:
             return None
+        if settings.CLOUDFLARE_MODEL.startswith("@cf/"):
+            return ProviderConfig(
+                name="cloudflare",
+                model=settings.CLOUDFLARE_MODEL,
+                api_key=settings.CLOUDFLARE_API_TOKEN,
+                base_url=f"https://api.cloudflare.com/client/v4/accounts/{settings.CLOUDFLARE_ACCOUNT_ID}/ai/run",
+                kind="cloudflare_workers",
+            )
         return ProviderConfig(
             name="cloudflare",
             model=settings.CLOUDFLARE_MODEL,
@@ -60,6 +68,20 @@ def _config(name: str) -> ProviderConfig | None:
     return None
 
 
+def _parse_json_object(text: str) -> dict[str, Any]:
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end < start:
+            raise
+        data = json.loads(text[start : end + 1])
+    if not isinstance(data, dict):
+        raise RuntimeError("AI response was not a JSON object")
+    return data
+
+
 def _call_openai(cfg: ProviderConfig, system: str, user: str, temperature: float) -> dict[str, Any]:
     if not cfg.api_key:
         raise RuntimeError(f"{cfg.name} API key is not configured")
@@ -81,7 +103,43 @@ def _call_openai(cfg: ProviderConfig, system: str, user: str, temperature: float
         timeout=settings.AI_TIMEOUT,
     )
     r.raise_for_status()
-    return json.loads(r.json()["choices"][0]["message"]["content"])
+    return _parse_json_object(r.json()["choices"][0]["message"]["content"])
+
+
+def _call_cloudflare_workers(cfg: ProviderConfig, system: str, user: str, temperature: float) -> dict[str, Any]:
+    if not cfg.api_key:
+        raise RuntimeError("cloudflare API key is not configured")
+    if not cfg.model:
+        raise RuntimeError("cloudflare model is not configured")
+    r = httpx.post(
+        f"{cfg.base_url.rstrip('/')}/{cfg.model}",
+        headers={"Authorization": f"Bearer {cfg.api_key}"},
+        json={
+            "messages": [
+                {"role": "system", "content": system + " Output must be JSON."},
+                {"role": "user", "content": user},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": temperature,
+        },
+        timeout=settings.AI_TIMEOUT,
+    )
+    r.raise_for_status()
+    body = r.json()
+    if not body.get("success", False):
+        raise RuntimeError(f"cloudflare request failed: {body.get('errors') or body}")
+    result = body.get("result", {})
+    response = result.get("response") if isinstance(result, dict) else None
+    if isinstance(response, dict):
+        return response
+    if isinstance(response, str):
+        return _parse_json_object(response)
+    choices = result.get("choices", []) if isinstance(result, dict) else []
+    if choices:
+        content = choices[0].get("message", {}).get("content")
+        if isinstance(content, str):
+            return _parse_json_object(content)
+    raise RuntimeError("cloudflare response did not include JSON content")
 
 
 def _call_google(cfg: ProviderConfig, system: str, user: str, temperature: float) -> dict[str, Any]:
@@ -93,7 +151,15 @@ def _call_google(cfg: ProviderConfig, system: str, user: str, temperature: float
         contents=f"{system}\n\n{user}",
         config={"response_mime_type": "application/json", "temperature": temperature},
     )
-    return json.loads(resp.text)
+    return _parse_json_object(resp.text)
+
+
+def _call_provider(cfg: ProviderConfig, system: str, user: str, temperature: float) -> dict[str, Any]:
+    if cfg.kind == "google":
+        return _call_google(cfg, system, user, temperature)
+    if cfg.kind == "cloudflare_workers":
+        return _call_cloudflare_workers(cfg, system, user, temperature)
+    return _call_openai(cfg, system, user, temperature)
 
 
 def generate_json(prompt_version: str, payload_hash: str, system: str, user: str, temperature: float = 0.2) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -107,7 +173,7 @@ def generate_json(prompt_version: str, payload_hash: str, system: str, user: str
         if cached is not None:
             return cached, {"provider": cfg.name, "model": cfg.model, "cache_hit": True, "attempts": attempts}
         try:
-            data = _call_google(cfg, system, user, temperature) if cfg.kind == "google" else _call_openai(cfg, system, user, temperature)
+            data = _call_provider(cfg, system, user, temperature)
             set_cached(prompt_version, payload_hash, cfg.name, cfg.model, data)
             return data, {"provider": cfg.name, "model": cfg.model, "cache_hit": False, "attempts": attempts}
         except Exception as e:

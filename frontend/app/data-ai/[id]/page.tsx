@@ -1,48 +1,146 @@
 "use client";
+
 import { useState } from "react";
-import { api } from "../../../lib/api";
+import { AppShell } from "../../../components/AppShell";
+import { Icon } from "../../../components/Icon";
+import { Button } from "../../../components/Primitives";
+import { EmptyState, WorkspaceFrame } from "../../../components/Workspace";
 import { MermaidPreview } from "../../../lib/MermaidPreview";
+import { api } from "../../../lib/api";
+import { useAuthToken } from "../../../lib/auth";
+import { can } from "../../../lib/rbac";
 
 export default function DataAiPage({ params }: { params: { id: string } }) {
-  const [token, setToken] = useState("");
+  const { token, user } = useAuthToken();
   const [data, setData] = useState<any>(null);
-  const [err, setErr] = useState("");
-  return (<div>
-    <h2>Data, Integration & AI Workspace — {params.id}</h2>
-    <input placeholder="paste JWT" value={token} onChange={e => setToken(e.target.value)} style={{ width: "100%" }} />
-    <div style={{ display: "flex", gap: 8, margin: "12px 0" }}>
-      <button onClick={async () => { setErr(""); try { await api(`/sessions/${params.id}/data-ai`, { method: "POST" }, token); setErr("queued — polling…"); } catch (e: any) { setErr(e.message); } }}>Generate Strategy</button>
-      <button onClick={async () => { setErr(""); try { const r = await api(`/sessions/${params.id}/data-ai`, {}, token); setData(r.data_ai || null); if (!r.data_ai) setErr("pending — approve scope + generate first"); } catch (e: any) { setErr(e.message); } }}>Refresh</button>
-    </div>
-    {err && <p>{err}</p>}
-    {data && (<div>
-      {data.coverage && <p><b>Coverage {data.coverage.coverage_pct}%</b> — uncovered: {data.coverage.uncovered_req_ids.join(", ") || "none"}
-        {data.coverage.unsupported_integrations?.length ? ` — unsupported integrations: ${data.coverage.unsupported_integrations.join(", ")}` : ""}
-        {data.coverage.unsupported_ai_use_cases?.length ? ` — unsupported AI: ${data.coverage.unsupported_ai_use_cases.join(", ")}` : ""}</p>}
-      <h3>Data domains</h3>
-      {data.data_domains?.map((d: any) => (<div key={d.domain_id} style={{ border: "1px solid #ddd", padding: 12, margin: "8px 0" }}>
-        <b>{d.domain_id} — {d.name}</b> <small>owner: {d.ownership} | storage: {d.storage} | reqs: {d.related_req_ids.join(", ")}</small>
-        <p>Sources: {d.sources.join(", ")} | Ingestion: {d.ingestion || "—"}</p>
-        <p><small>Transactional: {d.storage_transactional || "—"} | Analytical: {d.storage_analytical || "—"} | Metadata: {d.metadata || "—"}</small></p>
-        <small>Quality: {d.quality_rules.join("; ") || "—"} | Gov: {d.governance || "—"} | Retention: {d.retention || "—"} | Privacy: {d.privacy || "—"}</small>
-        <p><small>Reporting: {d.reporting || "—"} | Backup/Recovery: {d.backup_recovery || "—"}</small></p>
-      </div>))}
-      <h3>Integrations</h3>
-      {data.integrations?.map((i: any) => (<div key={i.int_id} style={{ border: "1px solid #ddd", padding: 12, margin: "8px 0" }}>
-        <b>{i.int_id} — {i.name}</b> [{i.pattern}] <small>{i.source_system} → {i.target_system} | reqs: {i.related_req_ids.join(", ")}</small>
-        <p><small>Auth: {i.auth || "—"} | Errors: {i.error_handling || "—"} | Retry: {i.retry || "—"} | Mon: {i.monitoring || "—"} | Sync: {i.sync_notes || "—"}</small></p>
-      </div>))}
-      <h3>AI use cases</h3>
-      {data.ai_use_cases?.map((a: any) => (<div key={a.uc_id} style={{ border: "1px solid #ddd", padding: 12, margin: "8px 0" }}>
-        <b>{a.uc_id} — {a.name}</b> <small>framework: {a.framework} | reqs: {a.related_req_ids.join(", ")}</small>
-        <p>AI: {a.ai_function}</p>
-        <p><small>Deterministic: {a.deterministic_part || "—"} | Human review: {a.human_review}</small></p>
-        <p><small>Why {a.framework}: {a.framework_rationale} | Models: {(a.model_options || []).join(", ") || "—"} | Orchestration: {a.orchestration || "—"} | Prompts: {a.prompt_management || "—"}</small></p>
-        <p><small>Retrieval: {a.retrieval_needs || "—"} | Eval: {a.evaluation} | Safety: {a.safety} | Privacy: {a.privacy || "—"} | Mon: {a.monitoring || "—"}</small></p>
-      </div>))}
-      <h3>Data flow</h3>
-      <MermaidPreview source={data.data_flow_mermaid} />
-      <pre style={{ background: "#f6f6f6", padding: 12, overflowX: "auto" }}>{data.data_flow_mermaid}</pre>
-    </div>)}
-  </div>);
+  const [status, setStatus] = useState("");
+  const canGenerate = can(user?.role, "generateDataAi");
+
+  async function generate() {
+    setStatus("");
+    try {
+      await api(`/sessions/${params.id}/data-ai`, { method: "POST" }, token);
+      setStatus("Data, integration and AI strategy queued. Refresh in a few seconds.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to generate strategy.");
+    }
+  }
+
+  async function refresh() {
+    setStatus("");
+    try {
+      const result = await api(`/sessions/${params.id}/data-ai`, {}, token);
+      setData(result.data_ai || null);
+      if (!result.data_ai) setStatus("Pending. Approve scope and generate strategy first.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to refresh strategy.");
+    }
+  }
+
+  return (
+    <AppShell sessionId={params.id}>
+      <WorkspaceFrame
+        sessionId={params.id}
+        title="Data, Integration & AI"
+        subtitle="Plan data domains, integrations, AI use cases, governance, safety and flow."
+        active="data-ai"
+        actions={
+          <div className="filter-row">
+            <Button onClick={generate} disabled={!canGenerate}>
+              <Icon name="data" />
+              Generate Strategy
+            </Button>
+            <Button variant="ghost" onClick={refresh}>
+              Refresh
+            </Button>
+          </div>
+        }
+      >
+        <div className="grid">
+          <section className="card pad">
+            <div className="filter-row">
+              <span className="badge blue">Signed in: {user?.email}</span>
+              {data?.coverage && <span className="badge green">Coverage {data.coverage.coverage_pct}%</span>}
+            </div>
+          </section>
+
+          {status && <div className="alert-box">{status}</div>}
+          {!data ? (
+            <EmptyState title="No data strategy yet" text="Generate this workspace after scope approval." />
+          ) : (
+            <>
+              <section className="card pad">
+                <div className="card-header">
+                  <h2 className="card-title">Coverage</h2>
+                  <span className="subtle">Uncovered: {data.coverage?.uncovered_req_ids?.join(", ") || "none"}</span>
+                </div>
+                <MermaidPreview source={data.data_flow_mermaid} />
+              </section>
+
+              <div className="split">
+                <section className="card pad">
+                  <h2 className="card-title">Data Domains</h2>
+                  <div className="stack" style={{ marginTop: 16 }}>
+                    {(data.data_domains || []).map((domain: any) => (
+                      <div className="scenario-card" key={domain.domain_id}>
+                        <span className="icon-wrap success">
+                          <Icon name="data" />
+                        </span>
+                        <div>
+                          <strong>{domain.domain_id} - {domain.name}</strong>
+                          <div className="subtle">Owner: {domain.ownership} | Storage: {domain.storage}</div>
+                          <p>Sources: {(domain.sources || []).join(", ")} | Ingestion: {domain.ingestion || "-"}</p>
+                          <div className="subtle">Quality: {(domain.quality_rules || []).join("; ") || "-"} | Privacy: {domain.privacy || "-"}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="card pad">
+                  <h2 className="card-title">Integrations</h2>
+                  <div className="stack" style={{ marginTop: 16 }}>
+                    {(data.integrations || []).map((integration: any) => (
+                      <div className="scenario-card" key={integration.int_id}>
+                        <span className="icon-wrap purple">
+                          <Icon name="change" />
+                        </span>
+                        <div>
+                          <strong>{integration.int_id} - {integration.name}</strong>
+                          <div className="subtle">{integration.source_system} to {integration.target_system} | {integration.pattern}</div>
+                          <p>Auth: {integration.auth || "-"} | Retry: {integration.retry || "-"} | Monitoring: {integration.monitoring || "-"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+              <section className="card pad">
+                <div className="card-header">
+                  <h2 className="card-title">AI Use Cases</h2>
+                  <span className="subtle">{data.ai_use_cases?.length || 0} identified</span>
+                </div>
+                <div className="stack">
+                  {(data.ai_use_cases || []).map((useCase: any) => (
+                    <div className="scenario-card" key={useCase.uc_id}>
+                      <span className="icon-wrap">
+                        <Icon name="spark" />
+                      </span>
+                      <div>
+                        <strong>{useCase.uc_id} - {useCase.name}</strong>
+                        <div className="subtle">Framework: {useCase.framework} | Reqs: {(useCase.related_req_ids || []).join(", ")}</div>
+                        <p>{useCase.ai_function}</p>
+                        <div className="subtle">Evaluation: {useCase.evaluation} | Safety: {useCase.safety} | Human review: {useCase.human_review}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+        </div>
+      </WorkspaceFrame>
+    </AppShell>
+  );
 }

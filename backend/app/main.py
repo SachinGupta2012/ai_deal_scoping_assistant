@@ -8,7 +8,13 @@ from app.routers import architecture, auth, data_ai, estimation, final_package, 
 
 logging.basicConfig(level=settings.LOG_LEVEL)
 app = FastAPI(title="AI Deal Scoping Assistant", version="0.1.0-phase6")
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(auth.router)
 app.include_router(sessions.router)
 app.include_router(scope.router)

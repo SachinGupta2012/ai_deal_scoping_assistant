@@ -1,3 +1,16 @@
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (<html lang="en"><body style={{ fontFamily: "system-ui", margin: 0 }}><main style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>{children}</main></body></html>);
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "AI Deal Scoping Assistant",
+  description: "Structured scoping workspace for AI-assisted deal discovery.",
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
 }
