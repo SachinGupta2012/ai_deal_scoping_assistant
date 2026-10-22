@@ -57,41 +57,13 @@ export default function LoginPage() {
             </div>
           ))}
         </div>
-        <div className="login-preview">
-          <div className="login-preview-inner">
-            <div className="card-header">
-              <strong>Good morning, Sachin!</strong>
-              <button className="btn primary" type="button">
-                <Icon name="plus" />
-                New Scoping Session
-              </button>
-            </div>
-            <div className="grid metrics">
-              {["Live sessions", "Role access", "Quality gates", "Export package"].map((item) => (
-                <div className="card pad" key={item}>
-                  <strong>{item}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </section>
 
       <section className="login-panel-wrap">
         <div className="card login-card">
-          <Brand />
           <h1>Welcome back</h1>
           <p className="eyebrow">Sign in to access your scoping sessions and continue building great solutions.</p>
-          <div className="stack" style={{ marginTop: 28 }}>
-            <button className="btn" type="button">
-              Continue with Microsoft
-              <Icon name="chevron" />
-            </button>
-            <button className="btn" type="button">
-              Continue with Google
-              <Icon name="chevron" />
-            </button>
-            <div className="divider">OR</div>
+          <div className="stack" style={{ marginTop: 14 }}>
             <label className="field" style={{ textAlign: "left" }}>
               <span className="label">Email address</span>
               <input className="input" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" />
@@ -107,11 +79,6 @@ export default function LoginPage() {
             </Button>
           </div>
           <p className="eyebrow">Need an account? Ask an admin to create a role-based user.</p>
-          <div className="footer-links">
-            <span>Help & Support</span>
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
-          </div>
         </div>
       </section>
     </div>
