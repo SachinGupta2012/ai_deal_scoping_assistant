@@ -1,0 +1,17 @@
+{
+  "currency": "USD",
+  "contingency_pct": 0.2,
+  "productivity_factor": 1.0,
+  "team_capacity_pw_per_week": 3.0,
+  "role_rates": [
+    { "role": "Solution Architect", "rate_per_week": 6000 },
+    { "role": "Product/BA", "rate_per_week": 4500 },
+    { "role": "Frontend Engineer", "rate_per_week": 5000 },
+    { "role": "Backend Engineer", "rate_per_week": 5200 },
+    { "role": "Data/Integration Engineer", "rate_per_week": 5600 },
+    { "role": "AI Engineer", "rate_per_week": 6000 },
+    { "role": "QA Engineer", "rate_per_week": 4200 },
+    { "role": "DevOps Engineer", "rate_per_week": 5500 },
+    { "role": "Delivery Manager", "rate_per_week": 5000 }
+  ]
+}

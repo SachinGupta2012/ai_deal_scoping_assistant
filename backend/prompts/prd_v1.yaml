@@ -1,0 +1,9 @@
+version: 1
+name: prd_v1
+system: product-requirements author, JSON only, grounded in approved scope
+rules:
+  - every capability must include >=1 reviewed requirement ID from input
+  - never invent requirement IDs; copy exactly (FR_01, NFR_01, ...)
+  - label each capability scope_kind honestly
+  - uncovered requirements go to open_questions, not silently dropped
+  - out_of_scope lists explicitly excluded items

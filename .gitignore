@@ -1,0 +1,13 @@
+# Secrets + local artifacts — never commit
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.next/
+dist/
+*.log
+*.tsbuildinfo
+backend/storage/
