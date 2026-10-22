@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
 import { Brand } from "./Brand";
 import { Icon, type IconName } from "./Icon";
 import { clearAuth, useAuthToken } from "../lib/auth";
@@ -29,6 +29,66 @@ function navItems(sessionId?: string): NavItem[] {
 function isActive(pathname: string, item: NavItem) {
   if (item.match === "/") return pathname === "/";
   return pathname.startsWith(item.match);
+}
+
+function ProfileMenu() {
+  const router = useRouter();
+  const { user } = useAuthToken();
+  const [open, setOpen] = useState(false);
+  const isAdmin = can(user?.role, "manageUsers");
+
+  function goToAdmin() {
+    setOpen(false);
+    router.push("/admin/users");
+  }
+
+  return (
+    <div className="profile-menu">
+      <button
+        className={`profile-btn ${open ? "open" : ""}`}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="avatar">{(user?.email || "U").slice(0, 2).toUpperCase()}</span>
+        <span className="profile-meta">
+          <strong>{user?.email || "Signed in"}</strong>
+          <span className="subtle">{user?.role || "user"}</span>
+        </span>
+        <Icon name="more" />
+      </button>
+      {open && (
+        <div className="profile-dropdown" role="menu">
+          {isAdmin && (
+            <>
+              <button type="button" role="menuitem" onClick={goToAdmin}>
+                <Icon name="user" />
+                Profile
+              </button>
+              <button type="button" role="menuitem" onClick={goToAdmin}>
+                <Icon name="settings" />
+                Settings
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            role="menuitem"
+            className="danger"
+            onClick={() => {
+              setOpen(false);
+              clearAuth();
+              router.replace("/login");
+            }}
+          >
+            <Icon name="change" />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function AppShell({ children, sessionId }: { children: ReactNode; sessionId?: string }) {
@@ -58,17 +118,7 @@ export function AppShell({ children, sessionId }: { children: ReactNode; session
           ))}
         </nav>
         <div className="sidebar-footer">
-          <Link className="nav-link" href="/login">
-            <Icon name="help" />
-            <span>Help & Support</span>
-          </Link>
-          <div className="profile">
-            <span className="avatar">SG</span>
-            <div>
-              <strong>{user?.email || "Signed in"}</strong>
-              <div className="subtle">{user?.role || "user"}</div>
-            </div>
-          </div>
+          <ProfileMenu />
         </div>
       </aside>
       <div className="app-main">
@@ -80,31 +130,17 @@ export function AppShell({ children, sessionId }: { children: ReactNode; session
 }
 
 export function Topbar() {
-  const router = useRouter();
-  const { user } = useAuthToken();
   return (
     <header className="topbar">
-      <div className="searchbox">
-        <Icon name="search" />
-        <span>Search sessions, customers, requirements...</span>
-      </div>
       <div className="top-actions">
-        <Icon name="bell" />
-        <div className="user-pill">
-          <span className="avatar" style={{ width: 42, height: 42 }}>
-            {(user?.email || "U").slice(0, 2).toUpperCase()}
-          </span>
-          <strong>{user?.email || "User"}</strong>
-          <span className="badge gray">{user?.role || "role"}</span>
-        </div>
+        <button className="icon-btn" type="button" aria-label="Notifications">
+          <Icon name="bell" />
+        </button>
         <div className="mode-pill">
           <Icon name="data" />
           <span>AI MODE</span>
           <Icon name="chevron" />
         </div>
-        <button className="btn ghost" type="button" onClick={() => { clearAuth(); router.replace("/login"); }}>
-          Sign out
-        </button>
       </div>
     </header>
   );

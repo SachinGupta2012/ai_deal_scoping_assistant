@@ -26,7 +26,8 @@ export type IconName =
   | "settings"
   | "shield"
   | "spark"
-  | "upload";
+  | "upload"
+  | "user";
 
 const paths: Record<IconName, string[]> = {
   alert: ["M12 9v4", "M12 17h.01", "M10.3 4.5 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0Z"],
@@ -57,6 +58,7 @@ const paths: Record<IconName, string[]> = {
   shield: ["M12 3 20 6v6c0 5-3.4 8.4-8 9-4.6-.6-8-4-8-9V6l8-3Z", "M9 12l2 2 4-5"],
   spark: ["M12 2l1.6 5.2L19 9l-5.4 1.8L12 16l-1.6-5.2L5 9l5.4-1.8L12 2Z", "M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"],
   upload: ["M12 16V4", "M7 9l5-5 5 5", "M5 20h14"],
+  user: ["M19 21a7 7 0 0 0-14 0", "M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"],
 };
 
 export function Icon({ name }: { name: IconName }) {

@@ -71,10 +71,10 @@ export function useLiveSessions() {
 
 export function sessionMetrics(sessions: SessionSummary[]) {
   return [
-    { label: "Total Sessions", value: String(sessions.length), trend: "Live database", tone: "blue", icon: "document" as const },
-    { label: "In Progress", value: String(sessions.filter((session) => session.status === "In Progress").length), trend: "Active work", tone: "blue", icon: "clock" as const },
-    { label: "Completed", value: String(sessions.filter((session) => session.status === "Completed").length), trend: "Ready packages", tone: "success", icon: "check" as const },
-    { label: "Needs Review", value: String(sessions.filter((session) => session.status === "Needs Review").length), trend: "Requires attention", tone: "danger", icon: "alert" as const },
+    { label: "Total Sessions", value: String(sessions.length), tone: "blue", icon: "document" as const },
+    { label: "In Progress", value: String(sessions.filter((session) => session.status === "In Progress").length), tone: "blue", icon: "clock" as const },
+    { label: "Completed", value: String(sessions.filter((session) => session.status === "Completed").length), tone: "success", icon: "check" as const },
+    { label: "Needs Review", value: String(sessions.filter((session) => session.status === "Needs Review").length), tone: "danger", icon: "alert" as const },
   ];
 }
 
@@ -88,8 +88,8 @@ export function DashboardClient() {
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Good morning</h1>
-          <div className="eyebrow">Turn customer inputs into structured, reviewable and traceable solution scopes.</div>
+          <h1 className="page-title dashboard-title">Admin Dashboard</h1>
+          <div className="eyebrow">Overview of scoping sessions and key activities.</div>
         </div>
         {canCreate && (
           <ButtonLink href="/sessions/new">
@@ -99,36 +99,24 @@ export function DashboardClient() {
         )}
       </div>
 
+      <div className="grid metrics" style={{ marginBottom: 18 }}>
+        {metrics.map((metric) => (
+          <MetricCard key={metric.label} {...metric} />
+        ))}
+      </div>
+
+      {status && <div className="alert-box" style={{ marginBottom: 18 }}>{status}</div>}
+
       <div className="dashboard-layout">
-        <div className="grid">
-          <div className="grid metrics">
-            {metrics.map((metric) => (
-              <MetricCard key={metric.label} {...metric} />
-            ))}
+        <section className="card pad">
+          <div className="card-header">
+            <h2 className="card-title">Recent Scoping Sessions</h2>
+            <Link className="link-text" href="/sessions">
+              View All
+            </Link>
           </div>
-
-          {status && <div className="alert-box">{status}</div>}
-
-          <section className="card pad">
-            <div className="card-header">
-              <h2 className="card-title">Recent Scoping Sessions</h2>
-              <Link className="link-text" href="/sessions">
-                View All
-              </Link>
-            </div>
-            {sessions.length ? <SessionTable sessions={sessions.slice(0, 5)} compact /> : <EmptyState title="No sessions yet" text="Create your first scoping session to populate this dashboard from the database." />}
-          </section>
-
-          <section className="card pad">
-            <div className="card-header">
-              <h2 className="card-title">Scoping Workflow</h2>
-              <Link className="link-text" href="/sessions">
-                Go to Sessions
-              </Link>
-            </div>
-            <WorkflowStepper active={1} />
-          </section>
-        </div>
+          {sessions.length ? <SessionTable sessions={sessions.slice(0, 5)} compact /> : <EmptyState title="No sessions yet" text="Create your first scoping session to populate this dashboard from the database." />}
+        </section>
 
         <aside className="grid">
           <section className="card pad">
@@ -149,7 +137,7 @@ export function DashboardClient() {
 
           <section className="card pad">
             <div className="card-header">
-              <h2 className="card-title">Open Items Requiring Attention</h2>
+              <h2 className="card-title">Items Requiring Attention</h2>
               <Link className="link-text" href="/sessions">
                 View All
               </Link>
@@ -175,6 +163,16 @@ export function DashboardClient() {
           </section>
         </aside>
       </div>
+
+      <section className="card pad" style={{ marginTop: 18 }}>
+        <div className="card-header">
+          <h2 className="card-title">Scoping Workflow</h2>
+          <Link className="link-text" href="/sessions">
+            Go to Sessions
+          </Link>
+        </div>
+        <WorkflowStepper active={1} />
+      </section>
     </>
   );
 }

@@ -19,8 +19,8 @@ export function Button({ children, variant = "primary", type = "button", onClick
   );
 }
 
-export function MetricCard({ label, value, trend, tone, icon }: { label: string; value: string; trend: string; tone: string; icon: IconName }) {
-  const trendClass = trend.startsWith("+") ? (tone === "danger" ? "bad" : "up") : "";
+export function MetricCard({ label, value, trend, tone, icon }: { label: string; value: string; trend?: string; tone: string; icon: IconName }) {
+  const trendClass = trend && trend.startsWith("+") ? (tone === "danger" ? "bad" : "up") : "";
   return (
     <div className="card metric-card">
       <span className={`icon-wrap ${tone}`}>
@@ -30,7 +30,7 @@ export function MetricCard({ label, value, trend, tone, icon }: { label: string;
         <div className="metric-value">{value}</div>
         <div className="metric-label">{label}</div>
       </div>
-      <div className={`metric-trend ${trendClass}`}>{trend}</div>
+      {trend ? <div className={`metric-trend ${trendClass}`}>{trend}</div> : null}
     </div>
   );
 }
