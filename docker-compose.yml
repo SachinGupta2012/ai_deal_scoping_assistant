@@ -1,0 +1,45 @@
+# Local parity stack — mirrors how the images will run in production.
+# Usage: docker compose up --build
+# Backend reuses backend/.env for AI keys; DATABASE_URL is overridden to point at the local db.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: scoping
+      POSTGRES_PASSWORD: scoping
+      POSTGRES_DB: scoping
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "scoping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://scoping:scoping@db:5432/scoping
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Browser hits the backend on the host machine, so localhost is correct even in-container.
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

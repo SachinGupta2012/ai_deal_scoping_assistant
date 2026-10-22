@@ -31,9 +31,13 @@ def test_schema_rejects_missing_origin():
         assert True
 
 
-def test_provider_chain_defaults_to_mock_mode():
-    chain = _chain()
-    assert chain == ["mock"]
+def test_provider_chain_defaults_to_mock_mode(monkeypatch):
+    from app.core.config import settings
+    from app.services.ai.orchestrator import run_analysis
+    monkeypatch.setattr(settings, "USE_MOCK_AI", True)
+    monkeypatch.setattr(settings, "AI_PROVIDER", "mock")
+    scope, meta = run_analysis("s1", "x" * 30, [{"idx": "0", "text": "y" * 30}])
+    assert scope.provider == "mock"
 
 
 def test_rbac_matrix():

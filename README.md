@@ -1,4 +1,5 @@
 # AI Deal Scoping Assistant
+[![CI/CD](https://github.com/SachinGupta2012/ai_deal_scoping_assistant/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/SachinGupta2012/ai_deal_scoping_assistant/actions/workflows/ci-cd.yml)
 
 > **Source of Truth:** This README captures the full client requirements for building this project. Refer back here anytime during development.
 > **Original Challenge Type:** AI Exponential League Rapid Application Development Challenge
@@ -212,13 +213,13 @@ Keep UI focused, clear, end-to-end — not overly enterprise-complex.
 ---
 
 ## 6. Deliverables Checklist
-- [ ] Working app (input → analysis → review → PRD/scope → arch+diagram → data/integration/AI → estimate/ROM → change-impact → coverage/consistency → package + mock mode)
-- [ ] Clean modular source (UI / ingestion / orchestration / scope-model / generators / estimation / traceability / change-impact / validation / export / mock)
-- [ ] Seed content: sample reqs + context + rates + commercial config + mock responses + schemas + doc structures. Must support 4 scenarios: app-modernization, data/integration-heavy, AI-enabled, missing-info case
-- [ ] Automated tests: schema validation, traceability, coverage, unsupported-rec detection, effort calc, ROM calc, rate/contingency change, missing-input handling, change-impact, consistency
-- [ ] This README (run locally, AI config, mock mode, processing flow, scope review, traceability, PRD/arch/data/AI gen, estimation/ROM, change-impact, validation, data protection, architecture/limitations)
-- [ ] Submission architecture diagram (browser → ingestion → orchestration → scope model → generators → estimation → traceability/change/validation → export → mock provider)
-- [ ] Demo video 3-5 min (input → review → approve → PRD → cloud select → arch → data/AI → estimate basis → coverage → change → quality check → export → mock mode)
+- [x] Working app (input → analysis → review → PRD/scope → arch+diagram → data/integration/AI → estimate/ROM → change-impact → coverage/consistency → package + mock mode)
+- [x] Clean modular source (UI / ingestion / orchestration / scope-model / generators / estimation / traceability / change-impact / validation / export / mock)
+- [x] Seed content: 4 scenarios (app-modernization, data/integration-heavy, AI-enabled, missing-info) + rates.json + schemas + doc structures
+- [x] Automated tests: 36 passing (`backend/tests` — schema validation, traceability, coverage, unsupported-rec detection, effort calc, ROM calc, rate/contingency change, missing-input handling, change-impact, consistency, AI chain, mock mode)
+- [x] This README (run locally, AI config, mock mode, processing flow, scope review, traceability, PRD/arch/data/AI gen, estimation/ROM, change-impact, validation, data protection, architecture/limitations)
+- [x] Submission architecture diagram: [docs/architecture.md](docs/architecture.md)
+- [ ] Demo video 3-5 min (input → review → approve → PRD → cloud select → arch → data/AI → estimate basis → coverage → change → quality check → export → mock mode) — remaining task
 
 ---
 
@@ -273,33 +274,105 @@ ai_deal_scoping_assistant/
 
 ---
 
-## 9. Local Run (TODO — fill as we build)
+## 9. Local Run
 ```bash
 # Backend
-cd backend; python -m venv .venv; pip install -r requirements.txt; uvicorn app.main:app --reload
+cd backend
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt      # Windows
+.venv\Scripts\uvicorn app.main:app --reload --port 8000
+
+# Seed the owner account (dev-only: ENV=development + ALLOW_DEV_SEED_OWNER=true)
+curl -s -X POST http://127.0.0.1:8000/auth/seed-owner \
+  -H "Content-Type: application/json" \
+  -d '{"email":"owner@local.dev","password":"Owner123!","full_name":"Owner"}'
+
 # Frontend
-cd frontend; npm install; npm run dev
-# Mock mode: USE_MOCK_AI=true (default), AI_PROVIDER=mock, no API keys needed
-# Free live chain: USE_MOCK_AI=false, AI_PROVIDER=live_chain
-# Provider order: AI_PROVIDER_CHAIN=cloudflare,openrouter,groq,google
-# Keys: CLOUDFLARE_API_TOKEN, OPENROUTER_API_KEY, GROQ_API_KEY, GEMINI_API_KEY
-# Cache: AI_CACHE_ENABLED=true, AI_CACHE_DIR=./storage/ai_cache
+cd ../frontend
+npm install
+npm run dev                                        # http://localhost:3000
 ```
 
-### Current Backend Routes
-- `POST /sessions` create session
-- `POST /sessions/{sid}/ingest` paste/upload requirements
-- `POST /sessions/{sid}/analyze` extract scope model
-- `POST /sessions/{sid}/approve` approve reviewed scope
-- `POST /sessions/{sid}/prd` generate PRD + scope
-- `POST /sessions/{sid}/architecture` generate cloud architecture
-- `POST /sessions/{sid}/data-ai` generate data/integration/AI strategy
-- `POST /sessions/{sid}/estimate` calculate effort, timeline, and ROM
-- `POST /sessions/{sid}/change-impact` inspect affected/unaffected outputs
-- `POST /sessions/{sid}/quality-gate` run pre-export checks
-- `POST /sessions/{sid}/package` export Markdown package with disclaimer
+### Configuration (backend/.env — copy from .env.example)
+```ini
+ENV=development
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require
 
-## 10. Known Limitations / Notes
+# AI modes:
+#   Clearly-labeled mock mode (no keys, no paid services): USE_MOCK_AI=true, AI_PROVIDER=mock
+#   Live single provider: USE_MOCK_AI=false, AI_PROVIDER=cloudflare|openrouter|groq|google
+#   Live fallback chain:  USE_MOCK_AI=false, AI_PROVIDER=live_chain
+AI_PROVIDER_CHAIN=cloudflare,openrouter,groq,google   # default; .env may reorder, e.g. google,groq,cloudflare,openrouter
+
+# Provider keys (fill what you have)
+GEMINI_API_KEY=            # gemini-3.8-flash
+GROQ_API_KEY=              # openai/gpt-oss-120b
+CLOUDFLARE_ACCOUNT_ID=     # CLOUDFLARE_MODEL=@cf/meta/llama-3.1-8b-instruct
+CLOUDFLARE_API_TOKEN=
+OPENROUTER_API_KEY=        # meta-llama/llama-3.3-70b-instruct:free
+
+# Structured-output cache (dev only)
+AI_CACHE_ENABLED=true
+AI_CACHE_DIR=./storage/ai_cache
+```
+If every live provider is unreachable, the API fails loudly with a provider summary — it never silently fakes live output. Mock mode must be enabled explicitly and is clearly labeled in `/health` (`mock_mode=true`) and every response payload.
+
+### Freemium Chain Rules
+- `live_chain` walks `AI_PROVIDER_CHAIN` in order and uses the **first provider that returns a valid JSON payload** (some free providers still fail occasionally — chain fallback covers this).
+- `AI_PROVIDER` values outside `mock | cloudflare | openrouter | groq | google | live_chain` fail at request time with the config error surfaced, not silently swapped.
+- Structured-output cache: repeated identical runs hit `./storage/ai_cache` (key = prompt-version + payload hash + provider + model), returning the stored payload with `cache_hit: true` in the response trace.
+- If all providers in the chain fail, the request fails loudly with the last provider error and provider trace.
+
+### API Base (frontend)
+- Default: `http://<hostname>:8000` — no `/api/v1` prefix; routers mount at root (`/sessions/...`, `/auth/...`).
+- Override with `NEXT_PUBLIC_API_URL` (read in `frontend/lib/api.ts`). Default allowed origins: `http://localhost:3000`, `http://127.0.0.1:3000`.
+
+### Current Backend Routes (verified list — 25 routes)
+**Auth** — `POST /auth/seed-owner` (dev-only) · `POST /auth/login` · `GET /auth/me` · `GET /auth/users` (admin) · `POST /auth/users` (admin)
+
+**Sessions + Requirements** — `POST /sessions` · `GET /sessions` · `POST /sessions/{sid}/ingest` (text + optional PDF/DOCX/TXT upload; pypdf/python-docx) · `POST /sessions/{sid}/analyze` (AI extraction → scope model) · `GET /sessions/{sid}/scope` · `PATCH /sessions/{sid}/scope/items` (meaning edits) · `POST /sessions/{sid}/approve` (409 conflict until scope reviewed; downstream generation requires approved scope)
+
+**Deliverables (each: POST generate + GET read)** — `POST|GET /sessions/{sid}/prd` · `POST|GET /sessions/{sid}/architecture` (platform: `aws|azure|gcp` or `recommend`) · `POST|GET /sessions/{sid}/data-ai` · `POST|GET /sessions/{sid}/estimate` (body `{ "config": {...} }` or `{}`)
+
+**FR-6 / Export** — `POST /sessions/{sid}/change-impact` · `POST|GET /sessions/{sid}/quality-gate` · `POST|GET /sessions/{sid}/package` (Markdown w/ mandatory disclaimer)
+
+**Meta** — `GET /health` · `GET /openapi.json`
+
+### Frontend pages
+`/` (dashboard) · `/login` · `/sessions` (workspace list) · `/requirements/[id]` · `/prd/[id]` · `/architecture/[id]` · `/data-ai/[id]` · `/estimate/[id]` · `/package/[id]` · `/admin/users`
+
+## 10b. CI/CD Pipeline (GitHub Actions)
+
+Workflow: [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml) — runs on every push/PR targeting `main` (markdown-only changes skipped).
+
+```
+pull_request → main                 push → main
+        │                                │
+   [backend-check]  in parallel  [frontend-check]
+    ruff (fatal rules) +           npm ci + tsc --noEmit
+    pytest (postgres:16 svc)       + next build
+        └────── needs both ────────┘
+                       ▼
+              [publish-images] (main push only)
+              backend + frontend images → ghcr.io (tags: main, sha-<sha>)
+                       ▼
+              [deploy] — intentionally disabled stub
+              (enable when a VPS/PaaS target exists)
+```
+
+Rules enforced by the pipeline:
+1. **PRs to main** always run backend + frontend checks; failures block merge.
+2. **Images publish only for reviewed main pushes** (`needs: [backend-check, frontend-check]`, PR event excluded).
+3. Future deploy can only run after images publish — wire it to a GitHub environment with required reviewer approval for the "verify before deploy" gate.
+
+### Branch protection to set (repo Settings → Branches → `main`)
+- Require a pull request before merging
+- Require status checks: `Backend (ruff + pytest)`, `Frontend (tsc + next build)`
+
+### Local parity
+`docker compose up --build` — spins Postgres + backend (:8000) + frontend (:3000) using the same images CI publishes.
+
+## 11. Known Limitations / Notes
 - Outputs are planning aids, not quotes/commitments — enforce disclaimer + human review.
 - Customer data stored locally only in mock mode; live AI mode requires explicit provider configuration and customer approval.
 - Estimation transparency > precision — always show drivers, rates, assumptions, confidence.

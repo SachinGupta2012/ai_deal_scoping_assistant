@@ -13,11 +13,10 @@
 ## Phase 2 — PRD + Functional Scope (FR-2)
 - [CLOSED 2026-10-10] Workstream decomposition delivered in estimation.
 - [CLOSED 2026-10-10] Reqs×capabilities matrix added to PRD workspace.
-- [OPEN] No live-provider end-to-end run (approve → generate with real AI) — requires approved AI credentials; mock path is implemented.
-
+- [CLOSED 2026-10-22] Live-provider e2e run completed via script `e2e_run.ps1`: Gemini `gemini-3.8-flash` analyzed `scenario_missing_info.md` → 5 reqs (5/5 traceable, 3 blocking questions) → approved → PRD generated live (3 capabilities, coverage 60%, uncovered NFR_01/NFR_02 auto-detected).
 ## Phase 3 — Cloud Architecture (FR-3)
 - [CLOSED 2026-10-10] Mermaid preview added as a dependency-free visual graph with raw Mermaid still shown.
-- [OPEN] No live-provider end-to-end run (approve → generate arch with real AI) — requires approved AI credentials; mock path is implemented.
+- [CLOSED 2026-10-22] Live-provider e2e run completed: `POST /architecture` with Gemini returned AWS-locked design (8 components, 0 off-catalog, 0 missing layers, deterministic `identify_platform` fallback if catalog-only).
 - [CLOSED 2026-10-10] `recommend_platform` upgraded to deterministic weighted scoring using cloud/ecosystem keywords from requirement text.
 
 ## Phase 4 — Data / Integration / AI Strategy (FR-4)
@@ -25,7 +24,7 @@
 - [CLOSED 2026-10-08] AIUseCase explicit fields added: model_options[], orchestration, prompt_management + prompt rules + frontend + tests.
 - [CLOSED 2026-10-08] Coverage now spans capabilities + integrations + AI use cases (extended compute_coverage, per-category unsupported lists, stored + audited on data_ai.generate, shown in UI).
 - [CLOSED 2026-10-10] data_flow_mermaid preview added as a dependency-free visual graph with raw Mermaid still shown.
-- [OPEN] No live-provider end-to-end run (approve → generate data/AI with real AI) — requires approved AI credentials; mock path is implemented.
+- [CLOSED 2026-10-22] Live-provider e2e run completed: `POST /data-ai` with Gemini returned 4 domains / 3 integrations / 1 AI use case with explicit domain fields + extended coverage 100%.
 
 ## Phase 5 — Estimation (FR-5)
 - [CLOSED 2026-10-10] Deterministic estimation schemas/service/router added: workstreams, effort ranges, timeline ranges, role rates, productivity, contingency, ROM, confidence, missing inputs, calculation rules.
@@ -40,7 +39,7 @@
 - [CLOSED 2026-10-10] Markdown package assembly/export added with mandatory disclaimer.
 - [CLOSED 2026-10-10] Mock mode added across extraction, PRD, architecture, and data/AI generation.
 - [CLOSED 2026-10-10] Seed set now includes app-modernization, data/integration-heavy, AI-enabled, missing-info, plus rates config.
-- [CLOSED 2026-10-10] Backend test suite passes (`30 passed`) and frontend validation passes via `npm run lint` (`tsc --noEmit`).
+- [CLOSED 2026-10-22] Backend test suite passes (`36 passed`) and frontend validation passes via `npm run lint` (`tsc --noEmit`).
 - [OPEN] PDF/DOCX export not implemented — bonus only per README.
 - [OPEN] Browser click-through/video not completed — requires manual/local UI pass.
 
